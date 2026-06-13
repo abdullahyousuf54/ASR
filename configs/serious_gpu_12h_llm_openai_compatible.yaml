@@ -114,11 +114,10 @@ evaluation:
 
 llm:
   provider: openai_compatible
-  endpoint:
-  model: REPLACE_WITH_MODEL_NAME
+  endpoint: https://api.openai.com/v1/chat/completions
+  model: gpt-4o-mini
   api_key_env: OPENAI_API_KEY
   temperature: 0.0
   timeout_seconds: 60
   strict_output_only: true
   max_edit_ratio: 0.35
-
