@@ -1,0 +1,193 @@
+project:
+  name: hindi_hinglish_whisper_asr
+  seed: 1337
+
+paths:
+  data_root: data
+  processed_dir: data/processed/hindi_asr
+  outputs_dir: outputs
+  checkpoints_dir: outputs/checkpoints
+  predictions_dir: outputs/predictions
+  metrics_dir: outputs/metrics
+  summaries_dir: outputs/summaries
+  reports_dir: reports
+
+audio:
+  sampling_rate: 16000
+  mono: true
+  min_seconds: 0.2
+  max_seconds: 30.0
+  normalize_loudness: false
+
+text:
+  train_label: transcript_indic
+  evaluation_modes: [whisper, indic]
+  preserve_hindi_diacritics: true
+
+model:
+  whisper_name: openai/whisper-base
+  fallback_whisper_name: openai/whisper-base
+  language: hi
+  task: transcribe
+  use_fallback_if_oom: true
+  optional_medium_model: openai/whisper-medium
+  generation:
+    max_new_tokens: 225
+    num_beams: 1
+
+datasets:
+  - id: common_voice_hi_official
+    enabled: false
+    kind: hf
+    path: mozilla-foundation/common_voice_17_0
+    name: hi
+    splits:
+      train: train
+      dev: validation
+      test: test
+    text_column: sentence
+    speaker_column: client_id
+    use_for_train: true
+    use_for_eval: true
+    access_note: Official Hugging Face Common Voice entries now point to Mozilla Data Collective and are not directly loadable here.
+
+  - id: common_voice_hi_mirror
+    enabled: true
+    kind: hf
+    path: fsicoli/common_voice_22_0
+    name: hi
+    trust_remote_code: true
+    splits:
+      train: train
+      dev: validation
+      test: test
+    text_column: sentence
+    speaker_column: client_id
+    use_for_train: true
+    use_for_eval: true
+    max_samples:
+      train: 1000
+      dev: 300
+      test: 300
+    access_note: Unofficial Hugging Face mirror of Mozilla Common Voice 22 Hindi, used for automatic experiments.
+
+  - id: shrutilipi_hi
+    enabled: false
+    kind: hf
+    path: ai4bharat/Shrutilipi
+    name: hindi
+    trust_remote_code: true
+    splits:
+      train: train
+      dev: validation
+    text_column: transcript
+    use_for_train: true
+    use_for_eval: false
+
+  - id: fleurs_hi
+    kind: hf
+    path: google/fleurs
+    name: hi_in
+    splits:
+      train: train
+      dev: validation
+      test: test
+    text_column: transcription
+    speaker_column: speaker_id
+    use_for_train: true
+    use_for_eval: true
+    max_samples:
+      train: 512
+      dev: 128
+      test: 128
+    access_note: Used for training fallback only because Common Voice was unavailable and Shrutilipi/LAHAJA were gated for this account.
+
+  - id: lahaja
+    enabled: false
+    kind: hf
+    path: ai4bharat/Lahaja
+    name: default
+    trust_remote_code: true
+    splits:
+      test: test
+    text_column: text
+    use_for_train: false
+    use_for_eval: true
+
+  - id: gram_vaani_slr118
+    kind: local_manifest
+    manifest_glob: data/raw/gram_vaani_slr118/*.csv
+    text_column: transcript
+    audio_column: audio_path
+    speaker_column: speaker_id
+    split_column: split
+    use_for_train: true
+    use_for_eval: true
+    access_note: Academic use allowed; commercial use requires permission.
+
+  - id: custom_hindi_hinglish
+    kind: local_manifest
+    manifest_glob: data/raw/custom_asr/manifests/*.csv
+    text_column: transcript
+    audio_column: audio_path
+    speaker_column: speaker_id
+    split_column: split
+    use_for_train: true
+    use_for_eval: true
+    access_note: Local custom Hindi/Hinglish ASR data supplied by the project team.
+
+  - id: springx_hindi
+    kind: local_manifest
+    manifest_glob: data/raw/springx_hindi/*.csv
+    text_column: transcript
+    audio_column: audio_path
+    speaker_column: speaker_id
+    split_column: split
+    use_for_train: false
+    use_for_eval: true
+
+training:
+  mode: lora
+  output_dir: outputs/checkpoints/whisper-base-hi-gpu
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 4
+  learning_rate: 0.0001
+  warmup_steps: 500
+  weight_decay: 0.0
+  fp16: true
+  bf16: false
+  gradient_checkpointing: false
+  eval_steps: 100
+  save_steps: 100
+  logging_steps: 50
+  early_stopping_patience: 3
+  dataloader_num_workers: 2
+  max_train_samples: 512
+  max_dev_samples: 64
+  report_to: tensorboard
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: [q_proj, v_proj]
+
+evaluation:
+  splits: [test]
+  batch_size: 1
+  max_eval_samples: 64
+  compute_rtf: true
+  optional_indic_baseline:
+    enabled: false
+    model_name: ai4bharat/indic-conformer-600m-multilingual
+
+llm:
+  provider: none
+  endpoint:
+  model:
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  timeout_seconds: 60
+  strict_output_only: true
+  max_edit_ratio: 0.55

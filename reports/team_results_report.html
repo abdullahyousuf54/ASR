@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hindi ASR Evaluation Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; color: #222; line-height: 1.45; }
+    h1, h2 { color: #17324d; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0 28px; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #eef3f7; }
+    img { max-width: 920px; width: 100%; border: 1px solid #ddd; margin: 10px 0 28px; }
+    .callout { background: #f6f8fa; border-left: 4px solid #2f6f9f; padding: 12px 16px; }
+  </style>
+</head>
+<body>
+  <h1>Hindi ASR Evaluation Report</h1>
+  <div class="callout">
+    <strong>Recommendation:</strong> Use the pretrained Whisper Base baseline for the current prototype.
+    The LoRA fine-tuned model degraded WER/CER on the completed FLEURS Hindi evaluation.
+  </div>
+  <h2>Main Results</h2>
+  <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>system</th>
+      <th>dataset</th>
+      <th>split</th>
+      <th>normalization</th>
+      <th>samples</th>
+      <th>audio_minutes</th>
+      <th>rtf</th>
+      <th>wer</th>
+      <th>cer</th>
+      <th>substitutions</th>
+      <th>deletions</th>
+      <th>insertions</th>
+      <th>checkpoint</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Whisper Base Baseline</td>
+      <td>FLEURS Hindi</td>
+      <td>test</td>
+      <td>whisper</td>
+      <td>64</td>
+      <td>12.46</td>
+      <td>0.185</td>
+      <td>1.0729</td>
+      <td>1.1221</td>
+      <td>1538</td>
+      <td>837</td>
+      <td>185</td>
+      <td>openai/whisper-base</td>
+    </tr>
+    <tr>
+      <td>Whisper Base Baseline</td>
+      <td>FLEURS Hindi</td>
+      <td>test</td>
+      <td>indic</td>
+      <td>64</td>
+      <td>12.46</td>
+      <td>0.185</td>
+      <td>1.0764</td>
+      <td>1.0030</td>
+      <td>1349</td>
+      <td>244</td>
+      <td>125</td>
+      <td>openai/whisper-base</td>
+    </tr>
+    <tr>
+      <td>Whisper Base LoRA Fine-Tuned</td>
+      <td>FLEURS Hindi</td>
+      <td>test</td>
+      <td>whisper</td>
+      <td>64</td>
+      <td>12.46</td>
+      <td>0.226</td>
+      <td>1.2460</td>
+      <td>1.4802</td>
+      <td>1640</td>
+      <td>706</td>
+      <td>627</td>
+      <td>outputs/checkpoints/whisper-base-hi-gpu</td>
+    </tr>
+    <tr>
+      <td>Whisper Base LoRA Fine-Tuned</td>
+      <td>FLEURS Hindi</td>
+      <td>test</td>
+      <td>indic</td>
+      <td>64</td>
+      <td>12.46</td>
+      <td>0.226</td>
+      <td>1.3202</td>
+      <td>1.2805</td>
+      <td>1431</td>
+      <td>154</td>
+      <td>522</td>
+      <td>outputs/checkpoints/whisper-base-hi-gpu</td>
+    </tr>
+  </tbody>
+</table>
+  <h2>WER/CER Comparison</h2>
+  <img src="figures/team_wer_cer_comparison.png" alt="WER/CER comparison">
+  <h2>Indic-Normalized Error Breakdown</h2>
+  <img src="figures/team_error_breakdown_indic.png" alt="Indic error breakdown">
+  <h2>Inference Speed</h2>
+  <img src="figures/team_runtime_rtf.png" alt="Runtime RTF">
+</body>
+</html>

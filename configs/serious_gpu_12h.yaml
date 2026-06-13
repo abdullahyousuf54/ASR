@@ -1,0 +1,147 @@
+project:
+  name: hindi_hinglish_whisper_asr_serious_gpu_12h
+  seed: 1337
+
+paths:
+  data_root: data
+  processed_dir: data/processed/hindi_asr_serious_gpu_12h
+  outputs_dir: outputs
+  checkpoints_dir: outputs/checkpoints
+  predictions_dir: outputs/predictions
+  metrics_dir: outputs/metrics
+  summaries_dir: outputs/summaries
+  reports_dir: reports
+
+audio:
+  sampling_rate: 16000
+  mono: true
+  min_seconds: 0.2
+  max_seconds: 30.0
+  normalize_loudness: false
+
+text:
+  train_label: transcript_indic
+  evaluation_modes: [whisper, indic]
+  preserve_hindi_diacritics: true
+
+model:
+  whisper_name: openai/whisper-base
+  fallback_whisper_name: openai/whisper-base
+  language: hi
+  task: transcribe
+  use_fallback_if_oom: true
+  optional_medium_model: openai/whisper-small
+  generation:
+    max_new_tokens: 225
+    num_beams: 1
+
+datasets:
+  - id: common_voice_hi_local
+    enabled: true
+    kind: local_manifest
+    manifest_glob: data/raw/common_voice_official_hi/manifests/*.csv
+    text_column: transcript
+    audio_column: audio_path
+    speaker_column: speaker_id
+    split_column: split
+    use_for_train: true
+    use_for_eval: true
+    access_note: Official Common Voice Hindi downloaded locally and converted to manifest.
+
+  - id: fleurs_hi
+    enabled: true
+    kind: hf
+    path: google/fleurs
+    name: hi_in
+    splits:
+      train: train
+      dev: validation
+      test: test
+    text_column: transcription
+    speaker_column: speaker_id
+    use_for_train: true
+    use_for_eval: true
+    max_samples:
+      train: 1200
+      dev: 300
+      test: 300
+    access_note: Clean Hindi benchmark and supplemental read-speech training data.
+
+  - id: custom_hindi_hinglish
+    enabled: true
+    kind: local_manifest
+    manifest_glob: data/raw/custom_asr/manifests/*.csv
+    text_column: transcript
+    audio_column: audio_path
+    speaker_column: speaker_id
+    split_column: split
+    use_for_train: true
+    use_for_eval: true
+    access_note: Optional local Hindi/Hinglish ASR data supplied by the project team.
+
+  - id: common_voice_hi_mirror
+    enabled: false
+    kind: hf
+    path: fsicoli/common_voice_22_0
+    name: hi
+    trust_remote_code: true
+    splits:
+      train: train
+      dev: validation
+      test: test
+    text_column: sentence
+    speaker_column: client_id
+    use_for_train: true
+    use_for_eval: true
+    max_samples:
+      train: 1000
+      dev: 300
+      test: 300
+    access_note: Optional fallback mirror. Keep disabled when official local Common Voice is present to reduce duplicate-risk.
+
+training:
+  mode: lora
+  output_dir: outputs/checkpoints/whisper-base-hi-serious-lora
+  num_train_epochs: 3
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.00002
+  warmup_steps: 200
+  weight_decay: 0.0
+  fp16: true
+  bf16: false
+  gradient_checkpointing: false
+  eval_steps: 250
+  save_steps: 250
+  logging_steps: 25
+  early_stopping_patience: 3
+  dataloader_num_workers: 2
+  max_train_samples: 6000
+  max_dev_samples: 500
+  report_to: tensorboard
+  lora:
+    r: 8
+    alpha: 16
+    dropout: 0.05
+    target_modules: [q_proj, v_proj]
+
+evaluation:
+  splits: [test]
+  batch_size: 1
+  max_eval_samples: 500
+  compute_rtf: true
+  optional_indic_baseline:
+    enabled: false
+    model_name: ai4bharat/indic-conformer-600m-multilingual
+
+llm:
+  provider: none
+  endpoint:
+  model:
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  timeout_seconds: 60
+  strict_output_only: true
+  max_edit_ratio: 0.35
+
